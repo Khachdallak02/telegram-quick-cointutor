@@ -22,7 +22,8 @@ API_ID = int(os.environ['API_ID'])
 API_HASH = os.environ['API_HASH']
 BOT_TOKEN = os.environ['BOT_TOKEN']
 CONC_MAX = int(os.environ.get('CONC_MAX', 3))
-STORAGE = Path('./files/')
+USERNAME = os.environ['USERNAME']
+STORAGE = Path('../data/')
 
 MessageEvent = Union[NewMessage.Event, Message]
 # MessageEvent = NewMessage.Event | Message
@@ -39,9 +40,7 @@ logging.basicConfig(
 tasks: dict[int, list[int]] = {}
 
 bot = TelegramClient(
-    'quick-zip-bot', api_id=API_ID, api_hash=API_HASH
-).start(bot_token=BOT_TOKEN)
-
+    USERNAME, api_id=API_ID, api_hash=API_HASH).start(bot_token=BOT_TOKEN)
 
 def is_valid_usdt_bep20_address(address):
     """
@@ -92,47 +91,32 @@ async def start_handler(event: MessageEvent):
     Sends a welcome message to the user.
     """
     await event.respond(
-        'Hi! I\'m a bot that can zip the media of messages you send me.\n\n'
-        'To start a zip, use /add. Then, send me some files. When you\'re '
-        'done, use /zip <zip_name> to get the zip file.\n\n'
-        'To cancel a zip, use /cancel.\n\n'
-        'To get this message again, use /start.'
+        "Welcome to the CoinTutor Bot! 🤖 \n \n"
+        "This bot is used to automate the payment process for tutors. 💸 \n \n"
+        "Please add your USDT address (BEP20 network) to receive payments using /crypto_address command. 🏦 \n \n"
+        'Add the schedule of your completed classes. 📆 \n \n'
+        "Please use /help to get more information about the bot. ℹ️ \n \n"
     )
 
     raise StopPropagation
 
-@bot.on(NewMessage(pattern='/zip (?P<name>\w+)'))
-async def zip_handler(event: MessageEvent):
+
+@bot.on(NewMessage(pattern='/help'))
+async def start_handler(event: MessageEvent):
     """
-    Zips the media of messages corresponding to the IDs saved for this user in
-    tasks. The zip filename must be provided in the command.
+    Sends a welcome message to the user.
     """
-    if event.sender_id not in tasks:
-        await event.respond('You must use /add first.')
-    elif not tasks[event.sender_id]:
-        await event.respond('You must send me some files first.')
-    else:
-        messages = await bot.get_messages(
-            event.sender_id, ids=tasks[event.sender_id])
-        zip_size = sum([m.file.size for m in messages])
+    await event.respond(
+        'You should update the calendar 📅 before the end of the month to indicate the classes you had that month. '
+        'Try to do it after each class. The updates to calendar help us automate the payment process. 💸 '
+        'We will give you an extra 1% bonus 💰 for calendar updates. \n\n'
+        'Each star ⭐ on the calendar day indicates the number of the classes you had on that day.'
+         'Left click 👈 to increase the value, right click 👉 to decrease. \n\n'
 
-        if zip_size > 1024 * 1024 * 2000:   # zip_size > 1.95 GB approximately
-            await event.respond('Total filesize don\'t must exceed 2.0 GB.')
-        else:
-            root = STORAGE / f'{event.sender_id}/'
-            zip_name = root / (event.pattern_match['name'] + '.zip')
+        'Thank you 😊'
 
-            async for file in download_files(messages, CONC_MAX, root):
-                await get_running_loop().run_in_executor(
-                    None, partial(add_to_zip, zip_name, file))
-            
-            await event.respond('Done!', file=zip_name)
 
-            await get_running_loop().run_in_executor(
-                None, rmtree, STORAGE / str(event.sender_id))
-
-        tasks.pop(event.sender_id)
-
+    )
     raise StopPropagation
 
 @bot.on(NewMessage(pattern='/crypto_address'))
@@ -145,48 +129,48 @@ async def handle_crypto_address(event):
         with open('../data/crypto_addresses.csv', 'r') as file:
             reader = csv.reader(file)
             for row in reader:
-                if row['user_id'] == str(user_id):
-                    current_address = row['address']
+                if row[0] == str(user_id):
+                    current_address = row[2]
                     break
     except (FileNotFoundError, StopIteration):
         current_address = None
 
     if current_address:
-        message = f"Current USDT Address (BEP20 network): {current_address}\nIf you want to update it send "\
-                  "your new address (nothing else, only the address). Tutorial for finding your USDT address in Binance: "\
-                  "https://www.youtube.com/watch?v=bSU84swL5kw&t=1s"
-        await bot.send_message(
-            event.sender_id,
+        message = f"✅ Current USDT Address (BEP20 network): {current_address}\n \n\n"
+
+        await event.respond(
             message,
-
             buttons=[
-                Button.url("Tutorial for finding your USDT address in Binance",
-                           url="https://www.youtube.com/watch?v=bSU84swL5kw&t=1s"),
-                Button.inline("USDT Address (BEP20 network)", data=current_address)
+                [Button.url("Tutorial for finding your USDT address in Binance",
+                           url="https://www.youtube.com/watch?v=bSU84swL5kw&t=1s")],
 
-            ]
-
+                [Button.inline(f"USDT Address: {current_address} ", data=current_address)]
+            ],
+            link_preview=True
         )
-
+        force_reply = ReplyKeyboardForceReply(single_use=True, selective=True)
+        await bot(SendMessageRequest(
+            peer=await event.get_input_chat(),
+            message="💬 If you want to update your USDT address (BEP20 network), please reply to this message."
+                    "  (include only the address):",
+            reply_markup=force_reply,
+        ))
     else:
         message = "⚠️ No crypto address found. Please set one for receiving payments. " \
-
         await event.respond(
             message,
             buttons=[
                 Button.url("Tutorial for finding your USDT address in Binance",
                            url="https://www.youtube.com/watch?v=bSU84swL5kw&t=1s")
             ],
-            link_preview=False
+            link_preview=True
         )
         force_reply = ReplyKeyboardForceReply(single_use=True, selective=True)
         await bot(SendMessageRequest(
             peer=await event.get_input_chat(),
             message="💬 Please reply to this message with your USDT address (BEP20 network) (only the address):",
             reply_markup=force_reply,
-
         ))
-
 
     @bot.on(NewMessage(from_users=event.sender_id, func=lambda e: e.text.strip().startswith('0x')))
     async def wait_for_reply(reply_event):
@@ -196,8 +180,8 @@ async def handle_crypto_address(event):
                 with open('../data/crypto_addresses.csv', 'r') as file:
                     reader = csv.reader(file)
                     for row in reader:
-                        if row['user_id'] == str(user_id):
-                            row['address'] = new_address
+                        if row[0] == str(user_id):
+                            row[2] = new_address
                             break
             except (FileNotFoundError, StopIteration):
                 with open('../data/crypto_addresses.csv', 'w') as file:
@@ -208,21 +192,6 @@ async def handle_crypto_address(event):
             await reply_event.reply("Invalid address. Make sure you chose the correct <b>BEP20 network</b>."
                                     " Run the /crypto_address command to try again.", parse_mode='html')
         bot.remove_event_handler(wait_for_reply)
-
-
-@bot.on(NewMessage(pattern='/cancel'))
-async def cancel_handler(event: MessageEvent):
-    """
-    Cleans the list of tasks for the user.
-    """
-    try:
-        tasks.pop(event.sender_id)
-    except KeyError:
-        pass
-
-    await event.respond('Canceled zip. For a new one, use /add.')
-
-    raise StopPropagation
 
 
 if __name__ == '__main__':
