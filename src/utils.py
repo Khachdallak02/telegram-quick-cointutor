@@ -2,7 +2,10 @@ from typing import Iterator
 from asyncio import wait
 from asyncio.tasks import FIRST_COMPLETED
 from zipfile import ZipFile
+from typing import Union, Optional
 from pathlib import Path
+
+
 
 from telethon.tl.custom import Message
 
@@ -10,7 +13,7 @@ from telethon.tl.custom import Message
 async def download_files(
     msgs: list[Message],
     conc_max: int = 3,
-    root: Path | None = None
+    root: Union[Path, None] = None
 ) -> Iterator[Path]:
     """
     Downloads the file if present for each message.
