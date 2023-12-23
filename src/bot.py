@@ -156,7 +156,7 @@ async def handle_crypto_address(event):
             reply_markup=force_reply,
         ))
     else:
-        message = "⚠️ No crypto address found. Please set one for receiving payments. " \
+        message = "⚠️ No crypto address found. Please set one for receiving payments. "
         await event.respond(
             message,
             buttons=[
