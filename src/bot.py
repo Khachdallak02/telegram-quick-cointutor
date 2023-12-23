@@ -91,7 +91,7 @@ async def start_handler(event: MessageEvent):
     Sends a welcome message to the user.
     """
     await event.respond(
-        "Welcome to the CoinTutor Bot! 🤖 \n \n"
+        "Welcome to the CoinTutor Bot 🤖 \n \n"
         "This bot is used to automate the payment process for tutors. 💸 \n \n"
         "Please add your USDT address (BEP20 network) to receive payments using /crypto_address command. 🏦 \n \n"
         'Add the schedule of your completed classes. 📆 \n \n'
@@ -118,6 +118,7 @@ async def start_handler(event: MessageEvent):
 
     )
     raise StopPropagation
+
 
 @bot.on(NewMessage(pattern='/crypto_address'))
 async def handle_crypto_address(event):
