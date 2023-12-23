@@ -13,6 +13,8 @@ from telethon.tl.custom import Message
 from telethon.tl.functions.messages import SendMessageRequest
 from telethon.tl.types import InputPeerUser, ReplyKeyboardForceReply
 import pandas as pd
+import datetime
+import calendar
 import re
 from utils import download_files, add_to_zip
 
@@ -24,6 +26,11 @@ BOT_TOKEN = os.environ['BOT_TOKEN']
 CONC_MAX = int(os.environ.get('CONC_MAX', 3))
 USERNAME = os.environ['USERNAME']
 STORAGE = Path('../data/')
+global_user_data = {}
+YEAR, MONTH = datetime.datetime.now().year, datetime.datetime.now().month
+FILENAME = "selected_days.csv"
+write_headers = not (os.path.exists(FILENAME) and os.path.getsize(FILENAME) > 0)
+columns = ['Year', 'Month', 'Day', 'USERNAME', 'FIRST_NAME', 'LAST_NAME']
 
 MessageEvent = Union[NewMessage.Event, Message]
 # MessageEvent = NewMessage.Event | Message
@@ -61,6 +68,7 @@ def is_valid_usdt_bep20_address(address):
 
     # Check if the address matches the pattern
     return bool(re.match(pattern, address))
+
 
 @bot.on(NewMessage(pattern='/add'))
 async def start_task_handler(event: MessageEvent):
@@ -110,8 +118,8 @@ async def start_handler(event: MessageEvent):
         'You should update the calendar 📅 before the end of the month to indicate the classes you had that month. '
         'Try to do it after each class. The updates to calendar help us automate the payment process. 💸 '
         'We will give you an extra 1% bonus 💰 for calendar updates. \n\n'
-        'Each star ⭐ on the calendar day indicates the number of the classes you had on that day.'
-         'Left click 👈 to increase the value, right click 👉 to decrease. \n\n'
+        'Each star ⭐ on the calendar day indicates the number of the classes you had on that day.\n\n'
+         # 'Left click 👈 to increase the value, right click 👉 to decrease. '
 
         'Thank you 😊'
 
@@ -193,6 +201,69 @@ async def handle_crypto_address(event):
             await reply_event.reply("Invalid address. Make sure you chose the correct <b>BEP20 network</b>."
                                     " Run the /crypto_address command to try again.", parse_mode='html')
         bot.remove_event_handler(wait_for_reply)
+
+
+def selected_days_from_csv(year, month, username):
+    df = pd.read_csv('selected_days.csv')
+    filtered_df = df[(df['Year'] == year) & (df['Month'] == month) & (df['USERNAME'] == username)]
+    filtered = filtered_df.values.tolist()
+    selected_days = list()
+    for i in range(len(filtered)):
+        selected_days.append(int(filtered[i][2]))
+    selected_days.sort()
+    selected_days = set(selected_days)
+    return list(selected_days)
+
+
+def create_calendar(year, month, selected_days):
+    markup = []
+    week_days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+
+    # Select a Different Month button
+    markup.append([Button.inline("Select a Different Month", data="classes:selecting_month")])
+
+    # Weekdays header
+    markup += [[Button.inline(day, data="ignore") for day in week_days]]
+
+    # Calendar days
+    cal_month = calendar.monthcalendar(year, month)
+    for week in cal_month:
+        row = []
+        for day in week:
+            if day == 0:
+                row.append(Button.inline(" ", data="ignore"))
+                continue
+            text = f"[{day}]" if day in selected_days else str(day)
+            row.append(Button.inline(text, data=f"classes:{day}" if day != 0 else "ignore"))
+        markup.append(row)
+
+    # Submit button
+    markup.append([Button.inline("Submit", data="classes:submit")])
+
+    return markup
+
+
+@bot.on(NewMessage(pattern='/classes_current_month'))
+async def ShowCalendarCurrentMonth(event):
+
+    year, month = datetime.datetime.now().year, datetime.datetime.now().month
+    user = await event.client.get_entity(event.sender_id)
+
+    # Assuming 'selected_days_from_csv' and 'create_calendar' are defined elsewhere
+    selected_days = selected_days_from_csv(str(year), str(month), user.username)
+    user_id = event.sender_id
+    user_data_key = f'selected_days_{year}_{month}'
+    if user_id not in global_user_data:
+        global_user_data[user_id] = {}
+    # If you are storing user data, you need to implement a way to do so, since Telethon does not have 'context.user_data'
+    # Assuming there's a global dictionary for user data
+    global_user_data[event.sender_id][user_data_key] = set(selected_days)
+    calendar_markup = create_calendar(year, month, selected_days)
+
+    # Sending the message with the calendar
+    await event.respond(f"Please select the days in {calendar.month_name[month]} {year} when you had classes:",
+                        buttons=calendar_markup)
+
 
 
 if __name__ == '__main__':
