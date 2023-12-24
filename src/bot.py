@@ -34,7 +34,10 @@ columns = ['Year', 'Month', 'Day', 'USERNAME', 'FIRST_NAME', 'LAST_NAME']
 if os.path.exists(FILENAME):
     existing_data = pd.read_csv(FILENAME)
 else:
+    # Create the file   
     existing_data = pd.DataFrame(columns=columns)
+    with open(FILENAME, 'w') as file:
+        existing_data.to_csv(file, index=False)
 
 MessageEvent = Union[NewMessage.Event, Message]
 # MessageEvent = NewMessage.Event | Message
