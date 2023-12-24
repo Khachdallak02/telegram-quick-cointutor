@@ -208,7 +208,7 @@ async def handle_crypto_address(event):
 
 
 def selected_days_from_csv(year: str, month: str, username: str):
-    df = pd.read_csv('selected_days.csv')
+    df = pd.read_csv(FILENAME)
     filtered_df = df[(df['Year'] == year) & (df['Month'] == month) & (df['USERNAME'] == username)]
     filtered = filtered_df.values.tolist()
     selected_days = list()
