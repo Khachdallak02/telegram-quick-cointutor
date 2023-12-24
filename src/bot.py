@@ -31,6 +31,10 @@ YEAR, MONTH = datetime.datetime.now().year, datetime.datetime.now().month
 FILENAME = "selected_days.csv"
 write_headers = not (os.path.exists(FILENAME) and os.path.getsize(FILENAME) > 0)
 columns = ['Year', 'Month', 'Day', 'USERNAME', 'FIRST_NAME', 'LAST_NAME']
+if os.path.exists(FILENAME):
+    existing_data = pd.read_csv(FILENAME)
+else:
+    existing_data = pd.DataFrame(columns=columns)
 
 MessageEvent = Union[NewMessage.Event, Message]
 # MessageEvent = NewMessage.Event | Message
@@ -203,7 +207,7 @@ async def handle_crypto_address(event):
         bot.remove_event_handler(wait_for_reply)
 
 
-def selected_days_from_csv(year, month, username):
+def selected_days_from_csv(year: str, month: str, username: str):
     df = pd.read_csv('selected_days.csv')
     filtered_df = df[(df['Year'] == year) & (df['Month'] == month) & (df['USERNAME'] == username)]
     filtered = filtered_df.values.tolist()
@@ -218,13 +222,10 @@ def selected_days_from_csv(year, month, username):
 def create_calendar(year, month, selected_days):
     markup = []
     week_days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-
     # Select a Different Month button
     markup.append([Button.inline("Select a Different Month", data="classes:selecting_month")])
-
     # Weekdays header
     markup += [[Button.inline(day, data="ignore") for day in week_days]]
-
     # Calendar days
     cal_month = calendar.monthcalendar(year, month)
     for week in cal_month:
@@ -233,37 +234,153 @@ def create_calendar(year, month, selected_days):
             if day == 0:
                 row.append(Button.inline(" ", data="ignore"))
                 continue
-            text = f"[{day}]" if day in selected_days else str(day)
+            text = f"{day}🧑‍🏫" if day in selected_days else str(day)
             row.append(Button.inline(text, data=f"classes:{day}" if day != 0 else "ignore"))
         markup.append(row)
-
     # Submit button
     markup.append([Button.inline("Submit", data="classes:submit")])
-
     return markup
+
+
+@bot.on(NewMessage(pattern='/selected_month_calendar'))
+async def ShowCalendar(event):
+    user = await event.client.get_entity(event.sender_id)
+    username = user.username
+
+    year = global_user_data[event.sender_id]['selected_year']
+    month = global_user_data[event.sender_id]['selected_month']
+
+    # Filter data for the current user and month
+    selected_days = selected_days_from_csv(str(year), str(month), str(username))
+
+    # Creating and sending the calendar
+    calendar_markup = create_calendar(year, month, selected_days)
+    await event.respond(f"Please select the days in {calendar.month_name[month]} {year} when you had classes:",
+                        buttons=calendar_markup)
+
 
 
 @bot.on(NewMessage(pattern='/classes_current_month'))
 async def ShowCalendarCurrentMonth(event):
-
-    year, month = datetime.datetime.now().year, datetime.datetime.now().month
     user = await event.client.get_entity(event.sender_id)
+    username = user.username
+    # Get the current year and month
+    year, month = datetime.datetime.now().year, datetime.datetime.now().month
 
-    # Assuming 'selected_days_from_csv' and 'create_calendar' are defined elsewhere
-    selected_days = selected_days_from_csv(str(year), str(month), user.username)
-    user_id = event.sender_id
-    user_data_key = f'selected_days_{year}_{month}'
-    if user_id not in global_user_data:
-        global_user_data[user_id] = {}
-    # If you are storing user data, you need to implement a way to do so, since Telethon does not have 'context.user_data'
-    # Assuming there's a global dictionary for user data
-    global_user_data[event.sender_id][user_data_key] = set(selected_days)
+    # Filter data for the current user and month
+    selected_days = selected_days_from_csv(str(year), str(month), str(username))
+    # Creating and sending the calendar
     calendar_markup = create_calendar(year, month, selected_days)
-
-    # Sending the message with the calendar
     await event.respond(f"Please select the days in {calendar.month_name[month]} {year} when you had classes:",
                         buttons=calendar_markup)
 
+
+@bot.on(events.NewMessage(pattern='/select_month'))
+async def select_month(event):
+    months = [calendar.month_abbr[i] for i in range(1, 13)]
+    month_buttons = [Button.inline(month, f"select_month:month_{i}") for i, month in enumerate(months, 1)]
+
+    # Grouping buttons in rows of three
+    month_markup = [month_buttons[i:i + 3] for i in range(0, len(month_buttons), 3)]
+    # month_markup.append([Button.inline("Submit", "select_month:submit")])
+
+    await event.respond('Please select the month you want to make changes to:', buttons=month_markup)
+
+async def select_year(event):
+    current_year = datetime.datetime.now().year
+    year_buttons = [Button.inline(str(year), f"select_month:year_{year}") for year in range(current_year - 5, current_year + 6)]
+
+    # Grouping buttons in rows of three
+    year_markup = [year_buttons[i:i+3] for i in range(0, len(year_buttons), 3)]
+    # year_markup.append([Button.inline("Submit", "select_month:submit")])
+
+    await event.respond('Please select the year you want to make changes to:', buttons=year_markup)
+
+
+async def handle_selection_classes(event):
+    # Extracting callback data
+    data_formatted = event.data.decode('utf-8').split(':')[1]
+    day_selected = data_formatted
+    if day_selected == "ignore":
+        return
+    user_id = event.sender_id
+    username = event.sender.username
+    # Accessing or initializing user data
+    if user_id not in global_user_data:
+        global_user_data[user_id] = {}
+    user_data = global_user_data[user_id]
+    # Retrieve or set the selected year and month
+    user_data['selected_year'] = user_data.get('selected_year', datetime.datetime.now().year)
+    user_data['selected_month'] = user_data.get('selected_month', datetime.datetime.now().month)
+    year, month = user_data['selected_year'], user_data['selected_month']
+    selected_days = selected_days_from_csv(str(year), str(month), username)
+    # Handling different cases of day_selected
+    if day_selected == "selecting_month":
+        await event.edit('You can select a Different Month by running /select_month command.')
+        return
+    if day_selected == "submit":
+        # Handle submit action
+        days = [str(x) for x in sorted(selected_days)]
+        await event.edit(f"You have selected {', '.join(days)}.")
+        return
+    day_selected = int(day_selected)
+    # Get user information
+    user_entity = await event.client.get_entity(user_id)
+    username = user_entity.username
+    first_name = user_entity.first_name
+    last_name = user_entity.last_name
+    # Handling day selection
+    if day_selected in selected_days:
+        selected_days.remove(day_selected)
+        df = pd.read_csv(FILENAME)
+        df.drop(df[(df['Year'] == str(year)) & (df['Month'] == str(month)) & (df['USERNAME'] == username) & (df['Day'] == str(day_selected))].index, inplace=True)
+        df.to_csv(FILENAME, index=False)
+    else:
+        selected_days.append(day_selected)
+        row = [str(year), str(month), str(day_selected), username, first_name, last_name]
+        existing_data = pd.read_csv(FILENAME)
+
+        if not ((existing_data == row).all(axis=1)).any():
+            existing_data.loc[len(existing_data)] = row
+        existing_data.to_csv(FILENAME, index=False)
+
+    # Update the message with the current selection
+    selected_days = selected_days_from_csv(str(year), str(month), username)
+    calendar_markup = create_calendar(year, month, selected_days)
+    await event.edit(f"Please select the days in {calendar.month_name[month]} {year}:", buttons=calendar_markup)
+
+
+async def handle_selection_help(event):
+    # Extracting callback data
+    data_formatted = event.data.decode('utf-8').split(':')[1]
+    selected_data = data_formatted.split('_')
+    selection_type = selected_data[0]
+    value = int(selected_data[1])
+
+    user_id = event.sender_id
+    if user_id not in global_user_data:
+        global_user_data[user_id] = {}
+    user_data = global_user_data[user_id]
+
+    if selection_type == "month":
+        user_data['selected_month'] = value
+        # Prompt for year selection
+        await select_year(event)
+    elif selection_type == "year":
+        user_data['selected_year'] = value
+        selected_month_name = calendar.month_name[user_data['selected_month']]
+        # Confirming the selection and providing further instructions
+        await event.edit(f"You have selected {selected_month_name} {value}. "
+                         f"Now run /selected_month_calendar to see the calendar.")
+
+
+@bot.on(events.CallbackQuery)
+async def callback_query_handler(event):
+    data = event.data.decode('utf-8')
+    if data.startswith("select_month:"):
+        await handle_selection_help(event)
+    elif data.startswith("classes:"):
+        await handle_selection_classes(event)
 
 
 if __name__ == '__main__':
