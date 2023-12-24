@@ -28,7 +28,7 @@ USERNAME = os.environ['USERNAME']
 STORAGE = Path('../data/')
 global_user_data = {}
 YEAR, MONTH = datetime.datetime.now().year, datetime.datetime.now().month
-FILENAME = "selected_days.csv"
+FILENAME = "../data/selected_days.csv"
 write_headers = not (os.path.exists(FILENAME) and os.path.getsize(FILENAME) > 0)
 columns = ['Year', 'Month', 'Day', 'USERNAME', 'FIRST_NAME', 'LAST_NAME']
 if os.path.exists(FILENAME):
