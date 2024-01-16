@@ -5,6 +5,7 @@ from shutil import rmtree
 from pathlib import Path
 import logging
 import os
+import time
 from typing import Union, Optional
 from dotenv import load_dotenv
 from telethon import TelegramClient, Button, events, types
@@ -29,6 +30,9 @@ STORAGE = Path('../data/')
 global_user_data = {}
 YEAR, MONTH = datetime.datetime.now().year, datetime.datetime.now().month
 FILENAME = "../data/selected_days.csv"
+FILENAME = 'selected_days.csv'
+ADMIN_PASSWORD = os.environ['ADMIN_PASSWORD']
+
 write_headers = not (os.path.exists(FILENAME) and os.path.getsize(FILENAME) > 0)
 columns = ['Year', 'Month', 'Day', 'USERNAME', 'FIRST_NAME', 'LAST_NAME']
 if os.path.exists(FILENAME):
@@ -55,6 +59,7 @@ tasks: dict[int, list[int]] = {}
 
 bot = TelegramClient(
     USERNAME, api_id=API_ID, api_hash=API_HASH).start(bot_token=BOT_TOKEN)
+
 
 def is_valid_usdt_bep20_address(address):
     """
@@ -210,6 +215,56 @@ async def handle_crypto_address(event):
         bot.remove_event_handler(wait_for_reply)
 
 
+@bot.on(NewMessage(pattern='/user_info'))
+async def handle_user_info_request(event: MessageEvent):
+    """
+    Handle requests for user information.
+    Starts by asking for a password.
+    """
+    force_reply = ReplyKeyboardForceReply(single_use=True, selective=True)
+    await bot(SendMessageRequest(
+        peer=await event.get_input_chat(),
+        message="Please enter the admin password:",
+        reply_markup=force_reply,
+    ))
+    time.sleep(8)
+
+    @bot.on(NewMessage(from_users=event.sender_id))
+    async def wait_for_password(reply_event):
+        if reply_event.text.strip() == ADMIN_PASSWORD:
+            # Password correct, send user information
+            await send_user_info(reply_event)
+        else:
+            await reply_event.reply("Incorrect password.")
+        bot.remove_event_handler(wait_for_password)
+
+
+async def send_user_info(event: MessageEvent):
+    """
+    Send information of all registered users from CSV files.
+    """
+    # Read user data from the CSV files
+    selected_days_df = pd.read_csv("../data/selected_days.csv")
+    crypto_addresses_df = pd.read_csv('../data/crypto_addresses.csv')
+
+    # selected_days_df = pd.read_csv('selected_days.csv')
+    # crypto_addresses_df = pd.read_csv('crypto_addresses.csv')
+    # Aggregate user info
+    user_info = "List of all users:\n"
+    users = set(selected_days_df['USERNAME']) | set(crypto_addresses_df['USERNAME'])
+
+    for user in users:
+        selected_days = selected_days_df[selected_days_df['USERNAME'] == user]
+        days_info = selected_days[['Year', 'Month', 'Day']].values.tolist()
+
+        crypto_address = crypto_addresses_df[crypto_addresses_df['USERNAME'] == user]['ADDRESS'].iloc[0] if not crypto_addresses_df[crypto_addresses_df['USERNAME'] == user].empty else "No Address"
+
+        user_info += f"Username: {user}, Days: {days_info}, Crypto Address: {crypto_address}\n"
+
+    # Send the compiled user information
+    await event.reply(user_info)
+
+
 def selected_days_from_csv(year: str, month: str, username: str):
     df = pd.read_csv(FILENAME)
     filtered_df = df[(df['Year'] == year) & (df['Month'] == month) & (df['USERNAME'] == username)]
@@ -269,7 +324,8 @@ async def ShowCalendarCurrentMonth(event):
     username = user.username
     # Get the current year and month
     year, month = datetime.datetime.now().year, datetime.datetime.now().month
-
+    global_user_data['selected_year'] = year
+    global_user_data['selected_month'] = month
     # Filter data for the current user and month
     selected_days = selected_days_from_csv(str(year), str(month), str(username))
     # Creating and sending the calendar
