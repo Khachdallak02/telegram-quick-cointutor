@@ -110,6 +110,7 @@ async def start_handler(event: MessageEvent):
     """
     Sends a welcome message to the user.
     """
+    print('testing')
     await event.respond(
         "Welcome to the CoinTutor Bot 🤖 \n \n"
         "This bot is used to automate the payment process for tutors. 💸 \n \n"
