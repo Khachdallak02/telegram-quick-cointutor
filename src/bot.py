@@ -30,7 +30,7 @@ STORAGE = Path('../data/')
 global_user_data = {}
 YEAR, MONTH = datetime.datetime.now().year, datetime.datetime.now().month
 FILENAME = "../data/selected_days.csv"
-FILENAME = 'selected_days.csv'
+# FILENAME = 'selected_days.csv'
 ADMIN_PASSWORD = os.environ['ADMIN_PASSWORD']
 
 write_headers = not (os.path.exists(FILENAME) and os.path.getsize(FILENAME) > 0)
@@ -418,7 +418,7 @@ async def handle_selection_classes(event):
     if new_message != current_message:
         await event.edit(new_message, buttons=calendar_markup)
     else:
-        pass
+        await event.edit(buttons=calendar_markup)
 
 
 
