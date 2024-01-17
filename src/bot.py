@@ -411,7 +411,15 @@ async def handle_selection_classes(event):
     # Update the message with the current selection
     selected_days = selected_days_from_csv(str(year), str(month), username)
     calendar_markup = create_calendar(year, month, selected_days)
-    await event.edit(f"Please select the days in {calendar.month_name[month]} {year} when you had classes:", buttons=calendar_markup)
+
+    new_message = f"Please select the days in {calendar.month_name[month]} {year} when you had classes:"
+    current_message = (await event.get_message()).message
+
+    if new_message != current_message:
+        await event.edit(new_message, buttons=calendar_markup)
+    else:
+        pass
+
 
 
 async def handle_selection_help(event):
