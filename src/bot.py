@@ -325,6 +325,10 @@ async def ShowCalendarCurrentMonth(event):
     username = user.username
     # Get the current year and month
     year, month = datetime.datetime.now().year, datetime.datetime.now().month
+    user_id = event.sender_id
+    # Accessing or initializing user data
+    if user_id not in global_user_data:
+        global_user_data[user_id] = {}
     global_user_data[event.sender_id]['selected_year'] = year
     global_user_data[event.sender_id]['selected_month'] = month
     # Filter data for the current user and month
