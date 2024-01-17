@@ -325,8 +325,8 @@ async def ShowCalendarCurrentMonth(event):
     username = user.username
     # Get the current year and month
     year, month = datetime.datetime.now().year, datetime.datetime.now().month
-    global_user_data['selected_year'] = year
-    global_user_data['selected_month'] = month
+    global_user_data[event.sender_id]['selected_year'] = year
+    global_user_data[event.sender_id]['selected_month'] = month
     # Filter data for the current user and month
     selected_days = selected_days_from_csv(str(year), str(month), str(username))
     # Creating and sending the calendar
