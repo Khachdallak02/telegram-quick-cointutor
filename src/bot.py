@@ -128,8 +128,8 @@ async def start_handler(event: MessageEvent):
     """
     await event.respond(
         'You should update the calendar 📅 before the end of the month to indicate the classes you had that month. '
-        'Try to do it after each class. The updates to calendar help us automate the payment process. 💸 '
-        'We will give you an extra 1% bonus 💰 for calendar updates. \n\n'
+        'Try to do it after each class. The updates to calendar help us automate the payment process. 💸 \n\n '
+        # 'We will give you an extra 1% bonus 💰 for calendar updates. '
         'Each star ⭐ on the calendar day indicates the number of the classes you had on that day.\n\n'
          # 'Left click 👈 to increase the value, right click 👉 to decrease. '
 
@@ -265,7 +265,6 @@ async def send_user_info(event: MessageEvent):
     await event.reply(user_info)
 
 
-
 def selected_days_from_csv(year: str, month: str, username: str):
     df = pd.read_csv(FILENAME)
     filtered_df = df[(df['Year'] == year) & (df['Month'] == month) & (df['USERNAME'] == username)]
@@ -318,7 +317,6 @@ async def ShowCalendar(event):
                         buttons=calendar_markup)
 
 
-
 @bot.on(NewMessage(pattern='/classes_current_month'))
 async def ShowCalendarCurrentMonth(event):
     user = await event.client.get_entity(event.sender_id)
@@ -350,6 +348,7 @@ async def select_month(event):
 
     await event.respond('Please select the month you want to make changes to:', buttons=month_markup)
 
+
 async def select_year(event):
     current_year = datetime.datetime.now().year
     year_buttons = [Button.inline(str(year), f"select_month:year_{year}") for year in range(current_year - 5, current_year + 6)]
@@ -365,6 +364,7 @@ async def handle_selection_classes(event):
     # Extracting callback data
     data_formatted = event.data.decode('utf-8').split(':')[1]
     day_selected = data_formatted
+    print(day_selected)
     if day_selected == "ignore":
         return
     user_id = event.sender_id
@@ -411,7 +411,7 @@ async def handle_selection_classes(event):
     # Update the message with the current selection
     selected_days = selected_days_from_csv(str(year), str(month), username)
     calendar_markup = create_calendar(year, month, selected_days)
-    await event.edit(f"Please select the days in {calendar.month_name[month]} {year}:", buttons=calendar_markup)
+    await event.edit(f"Please select the days in {calendar.month_name[month]} {year} when you had classes:", buttons=calendar_markup)
 
 
 async def handle_selection_help(event):
