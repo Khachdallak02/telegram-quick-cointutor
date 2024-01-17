@@ -29,8 +29,8 @@ USERNAME = os.environ['USERNAME']
 STORAGE = Path('../data/')
 global_user_data = {}
 YEAR, MONTH = datetime.datetime.now().year, datetime.datetime.now().month
-FILENAME = "../data/selected_days.csv"
-# FILENAME = 'selected_days.csv'
+# FILENAME = "../data/selected_days.csv"
+FILENAME = 'selected_days.csv'
 ADMIN_PASSWORD = os.environ['ADMIN_PASSWORD']
 
 write_headers = not (os.path.exists(FILENAME) and os.path.getsize(FILENAME) > 0)
@@ -146,7 +146,7 @@ async def handle_crypto_address(event):
     user_id = event.sender_id
     username = event.sender.username
     current_address = None
-
+    flag_has_address = False
     try:
         with open('../data/crypto_addresses.csv', 'r') as file:
             reader = csv.reader(file)
@@ -159,7 +159,7 @@ async def handle_crypto_address(event):
 
     if current_address:
         message = f"✅ Current USDT Address (BEP20 network): {current_address}\n \n\n"
-
+        flag_has_address = True
         await event.respond(
             message,
             buttons=[
@@ -198,17 +198,23 @@ async def handle_crypto_address(event):
     async def wait_for_reply(reply_event):
         new_address = reply_event.text.strip()
         if is_valid_usdt_bep20_address(new_address):
-            try:
-                with open('../data/crypto_addresses.csv', 'r') as file:
-                    reader = csv.reader(file)
-                    for row in reader:
-                        if row[0] == str(user_id):
-                            row[2] = new_address
-                            break
-            except (FileNotFoundError, StopIteration):
-                with open('../data/crypto_addresses.csv', 'w') as file:
+            if flag_has_address:
+                try:
+                    with open('../data/crypto_addresses.csv', 'r') as file:
+                        reader = csv.reader(file)
+                        for row in reader:
+                            if row[0] == str(user_id):
+                                row[2] = new_address
+                                break
+                except (FileNotFoundError, StopIteration):
+                    with open('../data/crypto_addresses.csv', 'w') as file:
+                        writer = csv.writer(file)
+                        writer.writerow([user_id, username, new_address])
+            else:
+                with open('../data/crypto_addresses.csv', 'a') as file:
                     writer = csv.writer(file)
                     writer.writerow([user_id, username, new_address])
+                            
             await reply_event.reply("Crypto address updated.")
         else:
             await reply_event.reply("Invalid address. Make sure you chose the correct <b>BEP20 network</b>."
