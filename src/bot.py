@@ -144,7 +144,10 @@ async def start_handler(event: MessageEvent):
 @bot.on(NewMessage(pattern='/crypto_address'))
 async def handle_crypto_address(event):
     user_id = event.sender_id
-    username = event.sender.username
+    user_entity = await event.client.get_entity(user_id)
+    username = user_entity.username
+    first_name = user_entity.first_name
+    last_name = user_entity.last_name
     current_address = None
     flag_has_address = False
     try:
