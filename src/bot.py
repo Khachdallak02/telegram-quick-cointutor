@@ -112,12 +112,8 @@ async def start_handler(event: MessageEvent):
     """
     Sends a welcome message to the user.
     """
-    os.remove('../data/crypto_addresses.csv')
-    with open('../data/crypto_addresses.csv', 'w', newline='') as file:
-        writer = csv.writer(file)
-        writer.writerow(['USER_ID', 'USERNAME', 'FIRST_NAME', 'LAST_NAME', 'Address'])
-    await event.respond(
 
+    await event.respond(
         "Welcome to the CoinTutor Bot 🤖 \n \n"
         "This bot is used to automate the payment process for tutors. 💸 \n \n"
         "Please add your USDT address (BEP20 network) to receive payments using /crypto_address command. 🏦 \n \n"
