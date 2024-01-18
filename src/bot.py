@@ -396,36 +396,35 @@ async def handle_selection_classes(event):
     user_data['selected_month'] = user_data.get('selected_month', datetime.datetime.now().month)
     year, month = str(user_data['selected_year']), str(user_data['selected_month'])
 
-    # Handling different cases of day_selected
-    if day_selected in ["selecting_month", "submit"]:
-        # Custom handling for these cases
-        await event.edit('Special commands not handled in this example.')
-        return
+    if os.path.exists(FILENAME) and os.path.getsize(FILENAME) > 0:
+        with open(FILENAME, mode='r', encoding='utf-8') as file:
+            reader = csv.DictReader(file)
+            data = list(reader)
+    else:
+        data = []
 
-    day_selected = int(day_selected)
-    # df = pd.read_csv(FILENAME)
+    row_exists = False
+    for row in data:
+        if (row['Year'] == year and row['Month'] == month and row['Day'] == str(day_selected) and
+                row['USERNAME'] == username):
+            row['Count'] = str(int(row['Count']) + 1)
+            row_exists = True
+            break
 
-    # # Check if row exists
-    # existing_row = df[(df['Year'] == str(year)) & (df['Month'] == str(month)) & (df['USERNAME'] == username) & (
-    #             df['Day'] == str(day_selected))]
-    #
-    # if not existing_row.empty:
-    #     # Increment count if day is already selected
-    #     existing_row['Count'] += 1
-    #     df.update(existing_row)
-    # else:
-    #     # Add new row if day is selected for the first time
-    #     row = [str(year), str(month), str(day_selected), 1, username, first_name, last_name]
-    #     df.loc[len(df)] = row
+    # If the row does not exist, add a new one
+    if not row_exists:
+        new_row = {
+            'Year': year, 'Month': month, 'Day': str(day_selected), 'Count': '1',
+            'USERNAME': username, 'FIRST_NAME': first_name, 'LAST_NAME': last_name
+        }
+        data.append(new_row)
 
-    # Save the updated DataFrame
-    # df.to_csv(FILENAME, index=False)
-    # Update the message with the current selection
-    # (assuming there's a function to update the calendar view)
-    # calendar_markup = create_calendar(year, month, selected_days)
-    # new_message = f"Please select the days in {calendar.month_name[month]} {year} when you had classes:"
-    #
-    # await event.respond(new_message, buttons=calendar_markup)
+    # Write the updated data back to the CSV
+    with open(FILENAME, mode='w', encoding='utf-8', newline='') as file:
+        writer = csv.DictWriter(file, fieldnames=columns)
+        writer.writeheader()
+        writer.writerows(data)
+
     with open(FILENAME, mode='r', encoding='utf-8') as file:
         reader = csv.DictReader(file)
         filtered_rows = [row for row in reader if
