@@ -433,7 +433,7 @@ async def handle_selection_classes(event):
     user_specific_df = df[(df['USERNAME'] == username) & (df['Year'] == str(year)) & (df['Month'] == str(month))]
     user_specific_filename = f"../data/{username}_{year}_{month}_classes.csv"
     user_specific_df.to_csv(user_specific_filename, index=False)
-    await event.respond(f"Your classes for {calendar.month_name[month]} {year} have been updated.",
+    await event.respond(f"Your classes for {calendar.month_name[int(month)]} {year} have been updated.",
                      file=[user_specific_filename])
 
 async def handle_selection_help(event):
