@@ -423,7 +423,7 @@ async def handle_selection_classes(event):
 
     # Save the updated DataFrame
     df.to_csv(FILENAME, index=False)
-    time.sleep(1)
+    time.sleep(10)
     # Update the message with the current selection
     # (assuming there's a function to update the calendar view)
     # calendar_markup = create_calendar(year, month, selected_days)
