@@ -112,6 +112,10 @@ async def start_handler(event: MessageEvent):
     """
     Sends a welcome message to the user.
     """
+    os.remove('../data/crypto_addresses.csv')
+    with open('../data/crypto_addresses.csv', 'w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(['USER_ID', 'USERNAME', 'FIRST_NAME', 'LAST_NAME', 'Address'])
     await event.respond(
 
         "Welcome to the CoinTutor Bot 🤖 \n \n"
@@ -214,7 +218,7 @@ async def handle_crypto_address(event):
                 # Check if user_id exists and update the address
                 for row in data:
                     if row[0] == str(user_id):
-                        row[2] = new_address
+                        row[4] = new_address
                         data_modified = True
                         break
 
@@ -225,7 +229,7 @@ async def handle_crypto_address(event):
                 if not data_modified:
                     with open('../data/crypto_addresses.csv', 'a', newline='') as file:
                         writer = csv.writer(file)
-                        writer.writerow([user_id, username, new_address])
+                        writer.writerow([user_id, username,first_name, last_name, new_address])
 
             except FileNotFoundError:
                 with open('../data/crypto_addresses.csv', 'w', newline='') as file:
