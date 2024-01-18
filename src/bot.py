@@ -130,11 +130,12 @@ async def start_handler(event: MessageEvent):
         'You should update the calendar 📅 before the end of the month to indicate the classes you had that month. '
         'Try to do it after each class. The updates to calendar help us automate the payment process. 💸 \n\n '
         # 'We will give you an extra 1% bonus 💰 for calendar updates. '
-        'The system will send you automatically generated csv file with the selected dates and the number of '
-        'classes you had each day. You can take a look to make sure everything is correct.\n\n'
-         # 'Left click 👈 to increase the value, right click 👉 to decrease. '
-        'Try to be careful when selecting the days. Command for removing accidental selections is under development '
-        'and will be added within a month. \n\n'
+        '📈 The system will send you an automatically generated csv file with the selected dates and the number of '
+        'classes you had each day. 📊 You can take a look to make sure everything is correct.👀\n\n'
+        
+        '🚨 Try to be careful when selecting the days. 📆 Command for removing accidental selections is under '
+        'development and will be added within a month. 🛠️\n\n'
+
         'Thank you 😊'
 
 
