@@ -263,28 +263,21 @@ async def handle_user_info_request(event: MessageEvent):
 
 async def send_user_info(event: MessageEvent):
     """
-    Send information of all registered users from CSV files using column numbers.
+    Send 'selected_days.csv' and 'crypto_addresses.csv' files.
     """
-    # Read user data from the CSV files
-    selected_days_df = pd.read_csv("../data/selected_days.csv", header=None)
-    crypto_addresses_df = pd.read_csv('../data/crypto_addresses.csv', header=None)
+    # Assuming the files are in the '../data/' directory
+    selected_days_file_path = "../data/selected_days.csv"
+    crypto_addresses_file_path = "../data/crypto_addresses.csv"
 
-    # selected_days_df = pd.read_csv('selected_days.csv', header=None)
-    # crypto_addresses_df = pd.read_csv('crypto_addresses.csv', header=None)
-    # Aggregate user info
-    user_info = "List of all users:\n"
-    users = set(selected_days_df.iloc[:, 3]) | set(crypto_addresses_df.iloc[:, 1])
+    # Check if files exist
+    if not os.path.exists(selected_days_file_path) or not os.path.exists(crypto_addresses_file_path):
+        await event.reply("Error: One or both files do not exist.")
+        return
 
-    for user in users:
-        selected_days = selected_days_df[selected_days_df.iloc[:, 3] == user]
-        days_info = selected_days.iloc[:, [0, 1, 2]].values.tolist()
-        days_info.sort()
-        crypto_address = crypto_addresses_df[crypto_addresses_df.iloc[:, 1] == user].iloc[0, 2] if not crypto_addresses_df[crypto_addresses_df.iloc[:, 1] == user].empty else "No Address"
-
-        user_info += f"Username: {user}, Days: {days_info}, Crypto Address: {crypto_address}\n"
-
-    # Send the compiled user information
-    await event.reply(user_info)
+    # Send the files
+    await event.reply("Sending 'selected_days.csv' and 'crypto_addresses.csv' files.")
+    await event.send_file(selected_days_file_path)
+    await event.send_file(crypto_addresses_file_path)
 
 
 def selected_days_from_csv(year: str, month: str, username: str):
