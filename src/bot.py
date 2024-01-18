@@ -406,7 +406,7 @@ async def handle_selection_classes(event):
         return
 
     day_selected = int(day_selected)
-    df = pd.read_csv(FILENAME)
+    # df = pd.read_csv(FILENAME)
 
     # # Check if row exists
     # existing_row = df[(df['Year'] == str(year)) & (df['Month'] == str(month)) & (df['USERNAME'] == username) & (
@@ -422,19 +422,27 @@ async def handle_selection_classes(event):
     #     df.loc[len(df)] = row
 
     # Save the updated DataFrame
-    df.to_csv(FILENAME, index=False)
+    # df.to_csv(FILENAME, index=False)
     # Update the message with the current selection
     # (assuming there's a function to update the calendar view)
     # calendar_markup = create_calendar(year, month, selected_days)
     # new_message = f"Please select the days in {calendar.month_name[month]} {year} when you had classes:"
     #
     # await event.respond(new_message, buttons=calendar_markup)
-    df = pd.read_csv(FILENAME)
-    user_specific_df = df[(df['USERNAME'] == username) & (df['Year'] == str(year)) & (df['Month'] == str(month))]
-    user_specific_filename = f"../data/{username}_{year}_{month}_classes.csv"
-    user_specific_df.to_csv(user_specific_filename, index=False)
+    with open(FILENAME, mode='r', encoding='utf-8') as file:
+        reader = csv.DictReader(file)
+        filtered_rows = [row for row in reader if
+                         row['USERNAME'] == username and row['Year'] == str(year) and row['Month'] == str(month)]
+
+    output_filename = f"../data/{username}_{year}_{month}_classes.csv"
+    with open(output_filename, mode='w', encoding='utf-8', newline='') as file:
+        writer = csv.DictWriter(file, fieldnames=reader.fieldnames)
+        writer.writeheader()
+        writer.writerows(filtered_rows)
+
+
     await event.respond(f"Your classes for {calendar.month_name[int(month)]} {year} have been updated.",
-                     file=[user_specific_filename])
+                        file=[output_filename])
 
 async def handle_selection_help(event):
     # Extracting callback data
