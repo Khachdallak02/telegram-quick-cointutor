@@ -61,6 +61,8 @@ bot = TelegramClient(
     USERNAME, api_id=API_ID, api_hash=API_HASH).start(bot_token=BOT_TOKEN)
 
 
+
+
 def is_valid_usdt_bep20_address(address):
     """
     Validate whether the input string is a USDT address in BEP20 (Binance Smart Chain) format.
@@ -110,8 +112,14 @@ async def start_handler(event: MessageEvent):
     """
     Sends a welcome message to the user.
     """
+    os.remove('../data/crypto_addresses.csv')
+    with open('../data/crypto_addresses.csv', 'w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(['USER_ID', 'USERNAME', 'FIRST_NAME', 'LAST_NAME', 'Address'])
+
     print('testing')
     await event.respond(
+        
         "Welcome to the CoinTutor Bot 🤖 \n \n"
         "This bot is used to automate the payment process for tutors. 💸 \n \n"
         "Please add your USDT address (BEP20 network) to receive payments using /crypto_address command. 🏦 \n \n"
@@ -228,8 +236,8 @@ async def handle_crypto_address(event):
             except FileNotFoundError:
                 with open('../data/crypto_addresses.csv', 'w', newline='') as file:
                     writer = csv.writer(file)
-                    writer.writerow(['user_id', 'Username', 'Address'])  # Optional: write headers
-                    writer.writerow([user_id, username, new_address])
+                    writer.writerow(['USER_ID', 'USERNAME', 'FIRST_NAME', 'LAST_NAME', 'Address'])  # Optional: write headers
+                    writer.writerow([user_id, username, first_name, last_name, new_address])
             await reply_event.reply("Crypto address updated.")
         else:
             await reply_event.reply("Invalid address. Make sure you chose the correct <b>BEP20 network</b>."
@@ -246,7 +254,7 @@ async def handle_user_info_request(event: MessageEvent):
     force_reply = ReplyKeyboardForceReply(single_use=True, selective=True)
     await bot(SendMessageRequest(
         peer=await event.get_input_chat(),
-        message="Please enter the admin password:",
+        message="Please enter the admin password (it will take some time to send the files):",
         reply_markup=force_reply,
     ))
     time.sleep(8)
