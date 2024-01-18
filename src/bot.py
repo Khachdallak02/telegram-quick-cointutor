@@ -29,8 +29,8 @@ USERNAME = os.environ['USERNAME']
 STORAGE = Path('../data/')
 global_user_data = {}
 YEAR, MONTH = datetime.datetime.now().year, datetime.datetime.now().month
-# FILENAME = "../data/selected_days.csv"
-FILENAME = 'selected_days.csv'
+FILENAME = "../data/selected_days.csv"
+# FILENAME = 'selected_days.csv'
 ADMIN_PASSWORD = os.environ['ADMIN_PASSWORD']
 
 write_headers = not (os.path.exists(FILENAME) and os.path.getsize(FILENAME) > 0)
@@ -275,7 +275,7 @@ async def send_user_info(event: MessageEvent):
     for user in users:
         selected_days = selected_days_df[selected_days_df.iloc[:, 3] == user]
         days_info = selected_days.iloc[:, [0, 1, 2]].values.tolist()
-
+        days_info.sort()
         crypto_address = crypto_addresses_df[crypto_addresses_df.iloc[:, 1] == user].iloc[0, 2] if not crypto_addresses_df[crypto_addresses_df.iloc[:, 1] == user].empty else "No Address"
 
         user_info += f"Username: {user}, Days: {days_info}, Crypto Address: {crypto_address}\n"
