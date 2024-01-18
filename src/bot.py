@@ -60,8 +60,6 @@ bot = TelegramClient(
     USERNAME, api_id=API_ID, api_hash=API_HASH).start(bot_token=BOT_TOKEN)
 
 
-
-
 def is_valid_usdt_bep20_address(address):
     """
     Validate whether the input string is a USDT address in BEP20 (Binance Smart Chain) format.
@@ -311,7 +309,7 @@ def create_calendar(year, month, selected_days):
             row.append(Button.inline(text, data=f"classes:{day}" if day != 0 else "ignore"))
         markup.append(row)
     # Submit button
-    markup.append([Button.inline("Submit", data="classes:submit")])
+    # markup.append([Button.inline("Submit", data="classes:submit")])
     return markup
 
 
