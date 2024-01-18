@@ -32,10 +32,6 @@ YEAR, MONTH = datetime.datetime.now().year, datetime.datetime.now().month
 FILENAME = "../data/selected_days.csv"
 # FILENAME = 'selected_days.csv'
 ADMIN_PASSWORD = os.environ['ADMIN_PASSWORD']
-# Delete filename
-
-# if os.path.exists(FILENAME):
-os.remove(FILENAME)
 write_headers = not (os.path.exists(FILENAME) and os.path.getsize(FILENAME) > 0)
 columns = ['Year', 'Month', 'Day', 'Count', 'USERNAME', 'FIRST_NAME', 'LAST_NAME']
 if os.path.exists(FILENAME):
