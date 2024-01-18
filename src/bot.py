@@ -130,9 +130,11 @@ async def start_handler(event: MessageEvent):
         'You should update the calendar 📅 before the end of the month to indicate the classes you had that month. '
         'Try to do it after each class. The updates to calendar help us automate the payment process. 💸 \n\n '
         # 'We will give you an extra 1% bonus 💰 for calendar updates. '
-        'Each star ⭐ on the calendar day indicates the number of the classes you had on that day.\n\n'
+        'The system will send you automatically generated csv file with the selected dates and the number of '
+        'classes you had each day. You can take a look to make sure everything is correct.\n\n'
          # 'Left click 👈 to increase the value, right click 👉 to decrease. '
-
+        'Try to be careful when selecting the days. Command for removing accidental selections is under development '
+        'and will be added within a month. \n\n'
         'Thank you 😊'
 
 
@@ -418,7 +420,7 @@ async def handle_selection_classes(event):
             'USERNAME': username, 'FIRST_NAME': first_name, 'LAST_NAME': last_name
         }
         data.append(new_row)
-
+    data.sort(key=lambda x: int(x['Day']))
     # Write the updated data back to the CSV
     with open(FILENAME, mode='w', encoding='utf-8', newline='') as file:
         writer = csv.DictWriter(file, fieldnames=columns)
