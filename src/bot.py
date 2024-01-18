@@ -408,18 +408,18 @@ async def handle_selection_classes(event):
     day_selected = int(day_selected)
     df = pd.read_csv(FILENAME)
 
-    # Check if row exists
-    existing_row = df[(df['Year'] == str(year)) & (df['Month'] == str(month)) & (df['USERNAME'] == username) & (
-                df['Day'] == str(day_selected))]
-
-    if not existing_row.empty:
-        # Increment count if day is already selected
-        existing_row['Count'] += 1
-        df.update(existing_row)
-    else:
-        # Add new row if day is selected for the first time
-        row = [str(year), str(month), str(day_selected), 1, username, first_name, last_name]
-        df.loc[len(df)] = row
+    # # Check if row exists
+    # existing_row = df[(df['Year'] == str(year)) & (df['Month'] == str(month)) & (df['USERNAME'] == username) & (
+    #             df['Day'] == str(day_selected))]
+    #
+    # if not existing_row.empty:
+    #     # Increment count if day is already selected
+    #     existing_row['Count'] += 1
+    #     df.update(existing_row)
+    # else:
+    #     # Add new row if day is selected for the first time
+    #     row = [str(year), str(month), str(day_selected), 1, username, first_name, last_name]
+    #     df.loc[len(df)] = row
 
     # Save the updated DataFrame
     df.to_csv(FILENAME, index=False)
@@ -434,7 +434,7 @@ async def handle_selection_classes(event):
     user_specific_df = df[(df['USERNAME'] == username) & (df['Year'] == str(year)) & (df['Month'] == str(month))]
     user_specific_filename = f"../data/{username}_{year}_{month}_classes.csv"
     user_specific_df.to_csv(user_specific_filename, index=False)
-    await event.send(f"Your classes for {calendar.month_name[month]} {year} have been sent.",
+    await event.send(f"Your classes for {calendar.month_name[month]} {year} have been updated.",
                      file=[user_specific_filename])
 
 async def handle_selection_help(event):
