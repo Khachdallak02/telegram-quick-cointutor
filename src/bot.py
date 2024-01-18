@@ -275,9 +275,8 @@ async def send_user_info(event: MessageEvent):
         return
 
     # Send the files
-    await event.reply("Sending 'selected_days.csv' and 'crypto_addresses.csv' files.")
-    await event.send_file(selected_days_file_path)
-    await event.send_file(crypto_addresses_file_path)
+    await event.reply("Sending 'selected_days.csv' and 'crypto_addresses.csv' files.",
+                      file=[selected_days_file_path, crypto_addresses_file_path])
 
 
 def selected_days_from_csv(year: str, month: str, username: str):
