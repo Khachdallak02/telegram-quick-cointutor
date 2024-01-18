@@ -397,7 +397,7 @@ async def handle_selection_classes(event):
     # Retrieve or set the selected year and month
     user_data['selected_year'] = user_data.get('selected_year', datetime.datetime.now().year)
     user_data['selected_month'] = user_data.get('selected_month', datetime.datetime.now().month)
-    year, month = user_data['selected_year'], user_data['selected_month']
+    year, month = str(user_data['selected_year']), str(user_data['selected_month'])
 
     # Handling different cases of day_selected
     if day_selected in ["selecting_month", "submit"]:
@@ -423,7 +423,6 @@ async def handle_selection_classes(event):
 
     # Save the updated DataFrame
     df.to_csv(FILENAME, index=False)
-    time.sleep(10)
     # Update the message with the current selection
     # (assuming there's a function to update the calendar view)
     # calendar_markup = create_calendar(year, month, selected_days)
