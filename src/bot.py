@@ -34,7 +34,7 @@ FILENAME = "../data/selected_days.csv"
 ADMIN_PASSWORD = os.environ['ADMIN_PASSWORD']
 
 write_headers = not (os.path.exists(FILENAME) and os.path.getsize(FILENAME) > 0)
-columns = ['Year', 'Month', 'Day', 'USERNAME', 'FIRST_NAME', 'LAST_NAME']
+columns = ['Year', 'Month', 'Day', 'Count', 'USERNAME', 'FIRST_NAME', 'LAST_NAME']
 if os.path.exists(FILENAME):
     existing_data = pd.read_csv(FILENAME)
 else:
@@ -384,54 +384,58 @@ async def handle_selection_classes(event):
     if day_selected == "ignore":
         return
     user_id = event.sender_id
-    username = event.sender.username
-    # Accessing or initializing user data
-    if user_id not in global_user_data:
-        global_user_data[user_id] = {}
-    user_data = global_user_data[user_id]
-    # Retrieve or set the selected year and month
-    user_data['selected_year'] = user_data.get('selected_year', datetime.datetime.now().year)
-    user_data['selected_month'] = user_data.get('selected_month', datetime.datetime.now().month)
-    year, month = user_data['selected_year'], user_data['selected_month']
-    selected_days = selected_days_from_csv(str(year), str(month), username)
-    # Handling different cases of day_selected
-    if day_selected == "selecting_month":
-        await event.edit('You can select a Different Month by running /select_month command.')
-        return
-    if day_selected == "submit":
-        # Handle submit action
-        days = [str(x) for x in sorted(selected_days)]
-        await event.edit(f"You have selected {', '.join(days)}.")
-        return
-    day_selected = int(day_selected)
-    # Get user information
     user_entity = await event.client.get_entity(user_id)
     username = user_entity.username
     first_name = user_entity.first_name
     last_name = user_entity.last_name
-    # Handling day selection
-    if day_selected in selected_days:
-        selected_days.remove(day_selected)
-        df = pd.read_csv(FILENAME)
-        df.drop(df[(df['Year'] == str(year)) & (df['Month'] == str(month)) & (df['USERNAME'] == username) & (df['Day'] == str(day_selected))].index, inplace=True)
-        df.to_csv(FILENAME, index=False)
-    else:
-        selected_days.append(day_selected)
-        row = [str(year), str(month), str(day_selected), username, first_name, last_name]
-        existing_data = pd.read_csv(FILENAME)
 
-        if not ((existing_data == row).all(axis=1)).any():
-            existing_data.loc[len(existing_data)] = row
-        existing_data.to_csv(FILENAME, index=False)
+    # Accessing or initializing user data
+    if user_id not in global_user_data:
+        global_user_data[user_id] = {}
+    user_data = global_user_data[user_id]
+
+    # Retrieve or set the selected year and month
+    user_data['selected_year'] = user_data.get('selected_year', datetime.datetime.now().year)
+    user_data['selected_month'] = user_data.get('selected_month', datetime.datetime.now().month)
+    year, month = user_data['selected_year'], user_data['selected_month']
+
+    # Handling different cases of day_selected
+    if day_selected in ["selecting_month", "submit"]:
+        # Custom handling for these cases
+        await event.edit('Special commands not handled in this example.')
+        return
+
+    day_selected = int(day_selected)
+    df = pd.read_csv(FILENAME)
+
+    # Check if row exists
+    existing_row = df[(df['Year'] == str(year)) & (df['Month'] == str(month)) & (df['USERNAME'] == username) & (
+                df['Day'] == str(day_selected))]
+
+    if not existing_row.empty:
+        # Increment count if day is already selected
+        existing_row['Count'] += 1
+        df.update(existing_row)
+    else:
+        # Add new row if day is selected for the first time
+        row = [str(year), str(month), str(day_selected), 1, username, first_name, last_name]
+        df.loc[len(df)] = row
+
+    # Save the updated DataFrame
+    df.to_csv(FILENAME, index=False)
 
     # Update the message with the current selection
-    selected_days = selected_days_from_csv(str(year), str(month), username)
-    calendar_markup = create_calendar(year, month, selected_days)
-    new_message = f"Please select the days in {calendar.month_name[month]} {year} when you had classes:"
-
-    await event.respond(new_message, buttons=calendar_markup)
-
-
+    # (assuming there's a function to update the calendar view)
+    # calendar_markup = create_calendar(year, month, selected_days)
+    # new_message = f"Please select the days in {calendar.month_name[month]} {year} when you had classes:"
+    #
+    # await event.respond(new_message, buttons=calendar_markup)
+    df = pd.read_csv(FILENAME)
+    user_specific_df = df[(df['USERNAME'] == username) & (df['Year'] == str(year)) & (df['Month'] == str(month))]
+    user_specific_filename = f"../data/{username}_{year}_{month}_classes.csv"
+    user_specific_df.to_csv(user_specific_filename, index=False)
+    await event.send(f"Your classes for {calendar.month_name[month]} {year} have been sent.",
+                     file=[user_specific_filename])
 
 async def handle_selection_help(event):
     # Extracting callback data
