@@ -158,7 +158,7 @@ async def handle_crypto_address(event):
             reader = csv.reader(file)
             for row in reader:
                 if row[0] == str(user_id):
-                    current_address = row[2]
+                    current_address = row[4]
                     flag_has_address = True
                     break
     except (FileNotFoundError, StopIteration):
